@@ -1,0 +1,97 @@
+{
+    "properties": {
+        "displayName": "storage account soft-delete with Acl",
+        "policyType": "Custom",
+        "mode": "All",
+        "parameters": {
+            "effect": {
+                "type": "String",
+                "metadata": {
+                    "displayName": "Effect",
+                    "description": "Define the effect of the Policy as Audit or Deny"
+                },
+                "allowedValues": [
+                    "AuditIfNotExists",
+                    "DeployIfNotExists",
+                    "Deny",
+                    "Disabled"
+                ],
+                "defaultValue": "AuditIfNotExists"
+            },
+            "kind": {
+                "type": "String",
+                "value": "StorageV2"
+            },
+            "supportsHttpsTrafficOnly": {
+                "type": "Array",
+                "allowedValues": [
+                    true,
+                    false
+                ],
+                "defaultValue": [
+                    true,
+                    false
+                ]
+            }
+        },
+        "if": {
+            "allof": [{
+                    "field": "type",
+                    "equals": "Microsoft.storage/StorageAccounts"
+                },
+                {
+                    "field": "Microsoft.storage/StorageAccounts/supportsHttpsTrafficOnly",
+                    "notequals": "true"
+                }
+            ]
+        },
+        "then": {
+            "effect": "[parameter('effect')]",
+            "details": {
+                "type": "Microsoft.storage/StorageAccounts",
+                "roleDefinitionIds": [
+                    "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+                ],
+                "existenceCondition": {
+                    "field": "Microsoft.storage/StorageAccounts/supportsHttpsTrafficOnly",
+                    "in": "[parameters('supportsHttpsTrafficOnly')]"
+                },
+                "deployment": {
+                    "properties": {
+                        "mode": "incremental",
+                        "parameters": {
+                            "storageAccountName": {
+                                "value": "[field('name')]"
+                            },
+                            "supportsHttpsTrafficOnly": {
+                                "value": "[parameters('supportsHttpsTrafficOnly')]"
+                            }
+                        },
+                        "template": {
+                            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                            "contentVersion": "1.0.0.0",
+                            "parameters": {
+                                "storageAccountName": {
+                                    "type": "string"
+                                },
+                                "supportsHttpsTrafficOnly": {
+                                    "type": "Array"
+                                },
+                                "resources": [{
+                                    "type": "Microsoft.storage/StorageAccounts",
+                                    "apiVersion": "2019-06-01",
+                                    "name": "[concat(parameters('storageAccountName'), '/default')]",
+                                    "properties": {
+                                        "supportsHttpsTrafficOnly": {
+                                            "value": "true"
+                                        }
+                                    }
+                                }]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
